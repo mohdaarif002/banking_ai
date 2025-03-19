@@ -7,6 +7,7 @@ import time
 import whisper
 model = whisper.load_model("base")
 
+
 def record_audio(duration=5, sample_rate=44100):
     st.write(f"Preparing microphone...")
     
