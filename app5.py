@@ -10,7 +10,7 @@ from utils import *
 
 
 # Load Whisper model (choose from: "tiny", "base", "small", "medium", "large")
-model = whisper.load_model("base")
+# model = whisper.load_model("base")
 
 # Create a directory for recordings if it doesn't exist
 SAVE_DIR = "recordings"
@@ -43,7 +43,7 @@ if st.button("Start Recording"):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     filename = f"rec_audio_{timestamp}.wav"
-    filepath = save_wav(filename, audio_data, sample_rate)
+    filepath = save_wav(filename, audio_data, sample_rate,SAVE_DIR)
 
     # Till now recording is saved and we have a path to it 
 

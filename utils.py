@@ -1,3 +1,12 @@
+import streamlit as st
+import sounddevice as sd
+import numpy as np
+import wave
+import os
+import time
+import whisper
+model = whisper.load_model("base")
+
 def record_audio(duration=5, sample_rate=44100):
     st.write(f"Preparing microphone...")
     
@@ -14,7 +23,7 @@ def record_audio(duration=5, sample_rate=44100):
 
 
 # Function to save WAV file in a given directory
-def save_wav(filename, data, sample_rate):
+def save_wav(filename, data, sample_rate, SAVE_DIR):
     filepath = os.path.join(SAVE_DIR, filename)
     with wave.open(filepath, 'wb') as wf:
         wf.setnchannels(2)  # Stereo
