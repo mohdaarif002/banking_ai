@@ -12,6 +12,8 @@ from langchain.schema.output_parser import StrOutputParser
 from langchain.prompts import PromptTemplate
 from langchain_groq import ChatGroq
 
+import re
+
 import mysql.connector
 
 
@@ -141,22 +143,45 @@ def groq_api_call(user_text, user_mpin, groq_api_key):
 
 
 def fetch_data_from_db(query):
-    # Establish connection
-    conn = mysql.connector.connect(
-        host="localhost",          # or "127.0.0.1"
-        user="root",    # e.g., "root"
-        password="admin",  # your MySQL password
-        database="BankDB"          # the database you want to connect to
-    )
-
     try:
+        # Ensure query does not contain restricted commands
+        forbidden_keywords = ["DELETE", "DROP", "ALTER", "TRUNCATE"]
+        if any(re.search(rf"\b{keyword}\b", query, re.IGNORECASE) for keyword in forbidden_keywords):
+
+            print("Error: DELETE, DROP, ALTER, and TRUNCATE commands are not allowed.")
+            return None
+        
+        # Establish connection
+        conn = mysql.connector.connect(
+            host="localhost",          
+            user="root",    
+            password="admin",  
+            database="BankDB"          
+        )
+
         cursor = conn.cursor()
-        cursor.execute(query)
 
-        # Always fetch results before closing
-        results = cursor.fetchall()
-        return results
+        try:
+            cursor.execute(query)
+            results = cursor.fetchall()
+            return results
 
-    finally:
-        cursor.close()
-        conn.close()
+        except mysql.connector.Error as e:
+            print(f"Database error: {e}")
+            return None  # Return None or handle as needed
+
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return None
+
+        finally:
+            cursor.close()
+            conn.close()
+
+    except mysql.connector.Error as e:
+        print(f"Connection error: {e}")
+        return None  # Return None or an appropriate response
+
+    except Exception as e:
+        print(f"Unexpected error while connecting: {e}")
+        return None
