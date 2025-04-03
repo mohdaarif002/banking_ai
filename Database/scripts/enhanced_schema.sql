@@ -155,6 +155,21 @@ CREATE TABLE Bills (
     FOREIGN KEY (merchant_id) REFERENCES Merchants (merchant_id) ON DELETE CASCADE
 );
 
+
+-- 13. Customer Summary Table (for AI quick responses)
+CREATE TABLE Customer_Summary (
+    customer_id INTEGER PRIMARY KEY,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    account_summary JSON, -- Stores account balances, types, statuses
+    transaction_summary JSON, -- Stores recent transactions and patterns
+    benefits_summary JSON, -- Stores active benefits and rewards
+    bills_summary JSON, -- Stores upcoming and overdue bills
+    spending_patterns JSON, -- Stores monthly spending categories
+    credit_summary JSON, -- Stores credit score, limits, and utilization
+    FOREIGN KEY (customer_id) REFERENCES Customers (customer_id) ON DELETE CASCADE
+);
+
+
 -- Create Indices for better performance
 CREATE INDEX idx_customers_email ON Customers(email);
 CREATE INDEX idx_accounts_customer ON Accounts(customer_id);

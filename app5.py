@@ -127,7 +127,7 @@ if st.session_state.logged_in:
 
         llm_response = groq_api_call(user_text=user_text, user_mpin="123456", groq_api_key= groq_api_key)
         llm_response = clean_sql_block(llm_response)
-        # st.success("Transcription Complete!")
+        
         st.text_area("LLM Response: ", llm_response)
 
 
@@ -135,7 +135,12 @@ if st.session_state.logged_in:
             print(llm_response)
         else:
             sql_response = fetch_data_from_db(query = llm_response)
-            #means valid sql query
+           
+            if sql_response is not None:
+                response = groq_api_call(user_text=user_text, user_mpin="123456", groq_api_key= groq_api_key)
+
+            else:
+                st.text_area("No data found or error occurred.")
 
         st.text_area("SQL Response:", sql_response)
 
@@ -151,30 +156,3 @@ if st.session_state.logged_in:
         for dic in st.session_state.list_of_dic:
             st.audio(dic['filepath'], format="audio/wav")  # Play audio
             st.text_area("Transcription", dic['text'])  # Show transcription
-
-
-
-# print(groq_api_key)
-
-# llm = ChatGroq(model="gemma2-9b-it", groq_api_key=groq_api_key )
-
-# template = """
-# You are a banking assistant. Extract the intent and key entities from the following message.
-
-# Message: {message_here}
-
-# Respond ONLY in this JSON format:
-# {{
-#   "intent": "...",
-#   "entities": {{
-#     "amount": "...",
-#     "recipient": "...",
-#     "account_type": "..."
-#   }}
-# }}
-
-# """
-# prompt = PromptTemplate.from_template(template)
-
-
-# handle_intent(intent=output['intent'], entities=output['entities']])
