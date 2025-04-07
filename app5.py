@@ -68,15 +68,23 @@ if "logged_in" not in st.session_state:
 if not st.session_state.logged_in:
     with st.form("login_form"):
         # st.title("🔐 Welcome to AxisBank, Please provide your 6 digit MPIN ?")
-        st.markdown(
-                    """
-                    <div style="text-align: center;">
-                        <img src="logo.png" width="120"/>
-                        <h2 style="margin-top: 0;">MyBank Assistant</h2>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+        # st.markdown(
+        #             """
+        #             <div style="text-align: center;">
+        #                 <img src="./logo.png" width="120"/>
+        #                 <h2 style="margin-top: 0;">MyBank Assistant</h2>
+        #             </div>
+        #             """,
+        #             unsafe_allow_html=True
+        #         )
+        
+
+        st.markdown('<div class="centered-image">', unsafe_allow_html=True)
+        st.image("logo.png", width=120)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        # st.image("logo.png", width=120)
+        st.markdown("<h2 style='text-align: center;'>MyBank Assistant</h2>", unsafe_allow_html=True)
 
         mpin = st.text_input("Enter your 6-digit MPIN to log in:", type="password")
         submitted = st.form_submit_button("Login")
@@ -135,14 +143,16 @@ if st.session_state.logged_in:
             print(llm_response)
         else:
             sql_response = fetch_data_from_db(query = llm_response)
+            st.text_area("SQL Response:", sql_response)
            
             if sql_response is not None:
-                response = groq_api_call(user_text=user_text, user_mpin="123456", groq_api_key= groq_api_key)
+                response_2 = groq_api_call_2(user_text,sql_response, groq_api_key)
+                # response = groq_api_call(user_text=user_text, user_mpin="123456", groq_api_key= groq_api_key)
 
             else:
                 st.text_area("No data found or error occurred.")
 
-        st.text_area("SQL Response:", sql_response)
+        st.text_area("Human Readable Response:", response_2)
 
 
         # Append new recording to session state
