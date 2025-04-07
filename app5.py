@@ -68,15 +68,23 @@ if "logged_in" not in st.session_state:
 if not st.session_state.logged_in:
     with st.form("login_form"):
         # st.title("🔐 Welcome to AxisBank, Please provide your 6 digit MPIN ?")
-        st.markdown(
-                    """
-                    <div style="text-align: center;">
-                        <img src="logo.png" width="120"/>
-                        <h2 style="margin-top: 0;">MyBank Assistant</h2>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+        # st.markdown(
+        #             """
+        #             <div style="text-align: center;">
+        #                 <img src="./logo.png" width="120"/>
+        #                 <h2 style="margin-top: 0;">MyBank Assistant</h2>
+        #             </div>
+        #             """,
+        #             unsafe_allow_html=True
+        #         )
+        
+
+        st.markdown('<div class="centered-image">', unsafe_allow_html=True)
+        st.image("logo.png", width=120)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        # st.image("logo.png", width=120)
+        st.markdown("<h2 style='text-align: center;'>MyBank Assistant</h2>", unsafe_allow_html=True)
 
         mpin = st.text_input("Enter your 6-digit MPIN to log in:", type="password")
         submitted = st.form_submit_button("Login")
