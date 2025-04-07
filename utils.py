@@ -15,6 +15,7 @@ from langchain_groq import ChatGroq
 import re
 
 import mysql.connector
+import global_variables
 
 
 
@@ -73,6 +74,11 @@ def groq_api_call(user_text, user_mpin, groq_api_key):
     input_variables=["customer_input","mpin"],
     template="""
                 You are an intelligent SQL generation assistant for a banking system. Use the database schema below to generate SQL queries **only if the MPIN is correct**.
+
+                ⚠️ IMPORTANT RULES:
+                - Only use MPIN to identify or authenticate the user. Ignore any other user-provided details like name, email, or customer ID.
+                - Never generate queries based on names, phone numbers, or email addresses.
+                - If the MPIN is missing or invalid, respond with a polite message like "Please provide a valid MPIN to proceed."
 
 
                 Database: `BankDB`
@@ -138,8 +144,89 @@ def groq_api_call(user_text, user_mpin, groq_api_key):
     print('user_inputs: ', user_inputs)
     response = chain.invoke(user_inputs)
 
+   
+    # response_2 = groq_api_call_2(user_text,response, groq_api_key)
 
     return response
+
+def groq_api_call_2(user_text, response, groq_api_key):
+    print('groq_api_call_2...........')
+    # print('groq_api_key ',groq_api_key)
+    llm = ChatGroq(model="gemma2-9b-it", groq_api_key=groq_api_key)
+
+    prompt = PromptTemplate(
+    input_variables=["user_text","response"],
+    template="""
+                You are an assistant for a conversational banking chatbot. Convert the MySQL query result into a clear and human-friendly answer for the user based on their question.
+
+                Database: `BankDB`
+
+                Tables:
+
+                1. `Customers`
+                - `customer_id` (INT, Primary Key)
+                - `first_name` (VARCHAR)
+                - `last_name` (VARCHAR)
+                - `dob` (DATE)
+                - `phone_number` (VARCHAR, Unique)
+                - `email` (VARCHAR, Unique)
+                - `address` (TEXT)
+                - `created_at` (TIMESTAMP)
+                - `mpin` (VARCHAR,Unique)
+
+                2. `Accounts`
+                - `account_id` (INT, Primary Key)
+                - `customer_id` (INT, Foreign Key referencing Customers.customer_id)
+                - `account_type` (ENUM: 'Savings', 'Checking', 'Loan', 'Credit Card')
+                - `balance` (DECIMAL)
+                - `currency` (VARCHAR)
+                - `status` (ENUM: 'Active', 'Inactive', 'Closed', 'Frozen')
+                - `opened_at` (TIMESTAMP)
+
+                3. `Transactions`
+                - `transaction_id` (INT, Primary Key)
+                - `account_id` (INT, Foreign Key referencing Accounts.account_id)
+                - `transaction_type` (ENUM: 'Deposit', 'Withdrawal', 'Transfer', 'Payment')
+                - `amount` (DECIMAL)
+                - `currency` (VARCHAR)
+                - `transaction_date` (TIMESTAMP)
+                - `status` (ENUM: 'Pending', 'Completed', 'Failed', 'Reversed')
+
+                ---
+
+                User Question: "{user_text}"
+
+                MySQL Output: "{response}"
+
+                Rules:
+                - Do not mention SQL or databases.
+                - Summarize the answer in clear, natural English.
+                - Be concise but helpful.
+                - If the result is empty or has no data, provide a polite message like "No records found" or something user-friendly.
+
+                Now respond to the user:
+              
+                """
+                )
+
+
+
+    # Create a processing chain using RunnableMap
+    chain = RunnableMap({
+        "user_text": lambda x: x["user_text"],
+        "response":lambda x: x["response"],
+    }) | prompt | llm | StrOutputParser()
+
+    user_inputs = {
+    "user_text": user_text,
+    "response": response
+    }
+
+    print('user_inputs: ', user_inputs)
+    response = chain.invoke(user_inputs)
+
+    return response
+
 
 
 def fetch_data_from_db(query):

@@ -143,14 +143,16 @@ if st.session_state.logged_in:
             print(llm_response)
         else:
             sql_response = fetch_data_from_db(query = llm_response)
+            st.text_area("SQL Response:", sql_response)
            
             if sql_response is not None:
-                response = groq_api_call(user_text=user_text, user_mpin="123456", groq_api_key= groq_api_key)
+                response_2 = groq_api_call_2(user_text,sql_response, groq_api_key)
+                # response = groq_api_call(user_text=user_text, user_mpin="123456", groq_api_key= groq_api_key)
 
             else:
                 st.text_area("No data found or error occurred.")
 
-        st.text_area("SQL Response:", sql_response)
+        st.text_area("Human Readable Response:", response_2)
 
 
         # Append new recording to session state
