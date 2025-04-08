@@ -6,7 +6,7 @@ import os
 import time
 import whisper
 # from langchain.prompts.prompt import PromptTemplate
-from langchain.schema.runnable import RunnableMap
+from langchain.schema.runnable import RunnableMap, RunnableLambda
 from langchain.schema.output_parser import StrOutputParser
 
 from langchain.prompts import PromptTemplate
@@ -16,10 +16,20 @@ import re
 
 import mysql.connector
 import global_variables
+from langchain.sql_database import SQLDatabase
+# from langchain.chains import SQLDatabaseChain
+from sqlalchemy.exc import SQLAlchemyError
+from dotenv import load_dotenv
+load_dotenv()
+
+groq_api_key = os.getenv("GROQ_API_KEY")
 
 
 
 model = whisper.load_model("base")
+db = SQLDatabase.from_uri("mysql+pymysql://root:admin@localhost/BankDB")
+llm = ChatGroq(model="gemma2-9b-it", groq_api_key=groq_api_key)
+schema = db.get_table_info()
 
 
 def record_audio(duration=5, sample_rate=44100):
@@ -65,10 +75,8 @@ def handle_intent(intent, entities):
     
 
 
-def groq_api_call(user_text, user_mpin, groq_api_key):
-    print('groq_api_call...........')
-    # print('groq_api_key ',groq_api_key)
-    llm = ChatGroq(model="gemma2-9b-it", groq_api_key=groq_api_key )
+def groq_api_call(user_text, user_mpin):
+    print('groq_api_1..........')
 
     prompt = PromptTemplate(
     input_variables=["customer_input","mpin"],
@@ -81,49 +89,17 @@ def groq_api_call(user_text, user_mpin, groq_api_key):
                 - If the MPIN is missing or invalid, respond with a polite message like "Please provide a valid MPIN to proceed."
 
 
-                Database: `BankDB`
-
-                Tables:
-
-                1. `Customers`
-                - `customer_id` (INT, Primary Key)
-                - `first_name` (VARCHAR)
-                - `last_name` (VARCHAR)
-                - `dob` (DATE)
-                - `phone_number` (VARCHAR, Unique)
-                - `email` (VARCHAR, Unique)
-                - `address` (TEXT)
-                - `created_at` (TIMESTAMP)
-                - `mpin` (VARCHAR,Unique)
-
-                2. `Accounts`
-                - `account_id` (INT, Primary Key)
-                - `customer_id` (INT, Foreign Key referencing Customers.customer_id)
-                - `account_type` (ENUM: 'Savings', 'Checking', 'Loan', 'Credit Card')
-                - `balance` (DECIMAL)
-                - `currency` (VARCHAR)
-                - `status` (ENUM: 'Active', 'Inactive', 'Closed', 'Frozen')
-                - `opened_at` (TIMESTAMP)
-
-                3. `Transactions`
-                - `transaction_id` (INT, Primary Key)
-                - `account_id` (INT, Foreign Key referencing Accounts.account_id)
-                - `transaction_type` (ENUM: 'Deposit', 'Withdrawal', 'Transfer', 'Payment')
-                - `amount` (DECIMAL)
-                - `currency` (VARCHAR)
-                - `transaction_date` (TIMESTAMP)
-                - `status` (ENUM: 'Pending', 'Completed', 'Failed', 'Reversed')
-
-                ---
+                Database Schema: '''{schema}'''
 
                 The user's MPIN is: "{mpin}"
 
                 If the MPIN is correct, proceed to generate a SQL query for the user input below. If the MPIN is incorrect or missing, respond with: "Access Denied: Invalid MPIN."
 
 
-                Customer Input: "{customer_input}"
+                Customer Input: '''{customer_input}'''
 
                 Respond Only raw SQL without any formatting and no additional explanation.
+                Only generate SQL queries using SELECT statements. Do not use DELETE, DROP, ALTER, or UPDATE.
                 Do NOT include comments or notes. Just return the query.
                 """
                 )
@@ -131,68 +107,52 @@ def groq_api_call(user_text, user_mpin, groq_api_key):
 
 
     # Create a processing chain using RunnableMap
-    chain = RunnableMap({
+    chain = (
+    RunnableMap({
         "customer_input": lambda x: x["user_text"],
-        "mpin":lambda x: x["user_mpin"],
-    }) | prompt | llm | StrOutputParser()
+        "mpin": lambda x: x["user_mpin"],
+        "schema": lambda x:x["schema"]
+    })
+    | prompt             # uses the inputs to build the prompt
+    | llm                # sends to Groq or GPT
+    | StrOutputParser()  # extracts plain string (SQL)
+    | RunnableLambda(run_sql_query)  # executes SQL and returns results
+    )
+
 
     user_inputs = {
     "user_text": user_text,
-    "user_mpin": user_mpin
+    "user_mpin": user_mpin,
+    "schema": schema
     }
 
     print('user_inputs: ', user_inputs)
     response = chain.invoke(user_inputs)
-
    
-    # response_2 = groq_api_call_2(user_text,response, groq_api_key)
-
     return response
 
-def groq_api_call_2(user_text, response, groq_api_key):
-    print('groq_api_call_2...........')
-    # print('groq_api_key ',groq_api_key)
-    llm = ChatGroq(model="gemma2-9b-it", groq_api_key=groq_api_key)
+
+def run_sql_query(query: str) -> str:
+    blocked_keywords = ["ALTER", "DROP", "DELETE", "TRUNCATE", "UPDATE"]
+    if any(word in query.upper() for word in blocked_keywords):
+        return "⚠️ Unsafe SQL query detected. Only SELECT queries are allowed."
+    
+    try:
+        result = db.run(query)
+        return result
+    except SQLAlchemyError as e:
+        return f"SQL Error: {str(e)}"    
+    
+
+def groq_api_call_2(user_text, response):
+    print('groq_api_2...........')
 
     prompt = PromptTemplate(
     input_variables=["user_text","response"],
     template="""
                 You are an assistant for a conversational banking chatbot. Convert the MySQL query result into a clear and human-friendly answer for the user based on their question.
 
-                Database: `BankDB`
-
-                Tables:
-
-                1. `Customers`
-                - `customer_id` (INT, Primary Key)
-                - `first_name` (VARCHAR)
-                - `last_name` (VARCHAR)
-                - `dob` (DATE)
-                - `phone_number` (VARCHAR, Unique)
-                - `email` (VARCHAR, Unique)
-                - `address` (TEXT)
-                - `created_at` (TIMESTAMP)
-                - `mpin` (VARCHAR,Unique)
-
-                2. `Accounts`
-                - `account_id` (INT, Primary Key)
-                - `customer_id` (INT, Foreign Key referencing Customers.customer_id)
-                - `account_type` (ENUM: 'Savings', 'Checking', 'Loan', 'Credit Card')
-                - `balance` (DECIMAL)
-                - `currency` (VARCHAR)
-                - `status` (ENUM: 'Active', 'Inactive', 'Closed', 'Frozen')
-                - `opened_at` (TIMESTAMP)
-
-                3. `Transactions`
-                - `transaction_id` (INT, Primary Key)
-                - `account_id` (INT, Foreign Key referencing Accounts.account_id)
-                - `transaction_type` (ENUM: 'Deposit', 'Withdrawal', 'Transfer', 'Payment')
-                - `amount` (DECIMAL)
-                - `currency` (VARCHAR)
-                - `transaction_date` (TIMESTAMP)
-                - `status` (ENUM: 'Pending', 'Completed', 'Failed', 'Reversed')
-
-                ---
+                Database Schema: '''{schema}'''
 
                 User Question: "{user_text}"
 
@@ -215,11 +175,13 @@ def groq_api_call_2(user_text, response, groq_api_key):
     chain = RunnableMap({
         "user_text": lambda x: x["user_text"],
         "response":lambda x: x["response"],
+        "schema":lambda x: x["schema"]
     }) | prompt | llm | StrOutputParser()
 
     user_inputs = {
     "user_text": user_text,
-    "response": response
+    "response": response,
+    "schema": schema 
     }
 
     print('user_inputs: ', user_inputs)
@@ -228,6 +190,61 @@ def groq_api_call_2(user_text, response, groq_api_key):
     return response
 
 
+def fetch_data_from_db_2(query):
+    
+
+    # Format: "mysql+pymysql://<username>:<password>@<host>/<database>"
+    db = SQLDatabase.from_uri("mysql+pymysql://root:admin@localhost/BankDB")
+
+    # Optional: Print available tables
+    # st.text_area("db.get_table_names()", db.get_table_names())
+
+    # Optional: Get schema for prompt use
+    # st.text_area("db.get_table_info()", db.get_table_info())
+    schema = db.get_table_info()
+
+    try:
+        # Ensure query does not contain restricted commands
+        forbidden_keywords = ["DELETE", "DROP", "ALTER", "TRUNCATE"]
+        if any(re.search(rf"\b{keyword}\b", query, re.IGNORECASE) for keyword in forbidden_keywords):
+
+            print("Error: DELETE, DROP, ALTER, and TRUNCATE commands are not allowed.")
+            return None
+        
+        # Establish connection
+        conn = mysql.connector.connect(
+            host="localhost",          
+            user="root",    
+            password="admin",  
+            database="BankDB"          
+        )
+
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(query)
+            results = cursor.fetchall()
+            return results
+
+        except mysql.connector.Error as e:
+            print(f"Database error: {e}")
+            return None  # Return None or handle as needed
+
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return None
+
+        finally:
+            cursor.close()
+            conn.close()
+
+    except mysql.connector.Error as e:
+        print(f"Connection error: {e}")
+        return None  # Return None or an appropriate response
+
+    except Exception as e:
+        print(f"Unexpected error while connecting: {e}")
+        return None    
 
 def fetch_data_from_db(query):
     try:

@@ -3,3 +3,6 @@ langchain_groq
 langchain_core
 langchain
 mysql-connector-python
+sqlalchemy
+pymysql
+langchain-community
