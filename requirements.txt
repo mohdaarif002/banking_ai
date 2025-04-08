@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 altair # file:///home/conda/feedstock_root/build_artifacts/altair-split_1734244716962/work
 attrs # file:///home/conda/feedstock_root/build_artifacts/attrs_1737819173731/work
 blinker # file:///home/conda/feedstock_root/build_artifacts/blinker_1731096409132/work
@@ -74,3 +75,16 @@ watchdog # file:///D:/bld/watchdog_1730492889998/work
 win_inet_pton # file:///D:/bld/win_inet_pton_1733130564612/work
 zipp # file:///home/conda/feedstock_root/build_artifacts/zipp_1732827521216/work
 zstandard==0.19.0
+=======
+streamlit==1.32.0
+langchain==0.1.12
+openai==1.12.0
+python-dotenv==1.0.1
+faiss-cpu==1.7.4
+redis==5.0.1
+sqlalchemy==2.0.28
+pandas==2.2.1
+numpy==1.26.4
+python-multipart==0.0.9
+pydantic==2.6.3
+>>>>>>> Stashed changes

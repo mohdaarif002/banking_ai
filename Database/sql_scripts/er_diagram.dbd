@@ -1,0 +1,92 @@
+Table Customers {
+  customer_id int [pk]
+  first_name varchar(100)
+  last_name varchar(100)
+  dob date
+  phone_number varchar(15) [unique]
+  email varchar(100) [unique]
+  address text
+  credit_score int
+  customer_since date
+  created_at timestamp
+}
+
+Table Accounts {
+  account_id int [pk]
+  customer_id int [ref: > Customers.customer_id]
+  account_type enum('Savings', 'Checking', 'Loan', 'Credit Card')
+  account_number varchar(20) [unique]
+  balance decimal(15,2)
+  currency varchar(3)
+  status enum('Active', 'Inactive', 'Closed', 'Frozen')
+  interest_rate decimal(5,2)
+  credit_limit decimal(15,2)
+  due_date date
+  opened_at timestamp
+}
+
+Table Payees {
+  payee_id int [pk]
+  customer_id int [ref: > Customers.customer_id]
+  payee_name varchar(100)
+  payee_type enum('Merchant', 'Individual', 'Business', 'Bill', 'International')
+  account_number varchar(20)
+  bank_name varchar(100)
+  merchant_id int
+  email varchar(100)
+  phone varchar(15)
+  address text
+  is_favorite boolean
+  created_at timestamp
+  last_used_at timestamp
+}
+
+Table Transactions {
+  transaction_id int [pk]
+  account_id int [ref: > Accounts.account_id]
+  transaction_type enum('Deposit', 'Withdrawal', 'Transfer', 'Payment')
+  amount decimal(15,2)
+  currency varchar(3)
+  transaction_date timestamp
+  status enum('Pending', 'Completed', 'Failed', 'Reversed')
+  description text
+  payee_id int [ref: > Payees.payee_id]
+  category_id int
+}
+
+Table Credit_Cards {
+  card_id int [pk]
+  account_id int [ref: > Accounts.account_id]
+  card_number varchar(16) [unique]
+  card_type enum('Visa', 'MasterCard', 'Amex', 'Discover')
+  expiry_date date
+  cvv varchar(4)
+  card_status enum('Active', 'Blocked', 'Expired')
+  issued_date date
+  monthly_limit decimal(15,5)
+}
+
+Table Bills {
+  bill_id int [pk]
+  account_id int [ref: > Accounts.account_id]
+  merchant_id int
+  bill_name varchar(100)
+  amount decimal(15,2)
+  currency varchar(3)
+  bill_date date
+  due_date date
+  status enum('Pending', 'Paid', 'Overdue', 'Cancelled')
+  recurring boolean
+  recurrence_period enum('Weekly', 'Monthly', 'Quarterly', 'Annually')
+}
+
+Table Customer_Summary {
+  customer_id int [pk, ref: > Customers.customer_id]
+  last_updated timestamp
+  account_summary json
+  transaction_summary json
+  benefits_summary json
+  bills_summary json
+  spending_patterns json
+  credit_summary json
+} 
