@@ -40,7 +40,7 @@ def get_db_connection():
 def create_mock_customers(conn, num_customers=100):
     try:
         cursor = conn.cursor()
-        for _ in range(num_customers):
+        for i in range(1, num_customers + 1):
             first_name = fake.first_name()
             last_name = fake.last_name()
             dob = fake.date_of_birth(minimum_age=18, maximum_age=80)
@@ -49,15 +49,17 @@ def create_mock_customers(conn, num_customers=100):
             address = fake.address()
             credit_score = random.randint(300, 850)
             customer_since = fake.date_between(start_date='-5y', end_date='today')
+            # Generate 6-digit mpin by padding customer index with leading zeros
+            mpin = str(i).zfill(6)
             
             cursor.execute("""
                 INSERT INTO Customers 
-                (first_name, last_name, dob, phone_number, email, address, credit_score, customer_since)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """, (first_name, last_name, dob, phone, email, address, credit_score, customer_since))
+                (first_name, last_name, dob, phone_number, email, address, credit_score, customer_since, mpin)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (first_name, last_name, dob, phone, email, address, credit_score, customer_since, mpin))
         
         conn.commit()
-        print(f"Created {num_customers} customers")
+        print(f"Created {num_customers} customers with unique 6-digit MPINs")
     except mysql.connector.Error as err:
         print(f"Error creating customers: {err}")
         conn.rollback()
@@ -71,8 +73,11 @@ def create_mock_accounts(conn, num_accounts_per_customer=2):
         cursor.execute("SELECT customer_id FROM Customers")
         customer_ids = [row[0] for row in cursor.fetchall()]
         
-        account_types = ['Savings', 'Checking', 'Loan', 'Credit Card']
-        currencies = ['USD', 'EUR', 'GBP', 'INR']
+        account_types = ['Savings',
+                         'Current',
+                         'Loan',
+                         'Credit Card']
+        currencies = ['INR']
         
         for customer_id in customer_ids:
             for _ in range(random.randint(1, num_accounts_per_customer)):
@@ -318,12 +323,19 @@ def main():
         conn = get_db_connection()
         print("Connected to the database")
         # Create mock data in order of dependencies
+        print("Generating customers with unique 6-digit MPINs...")
         create_mock_customers(conn)
+        print("Generating accounts...")
         create_mock_accounts(conn)
+        print("Generating payees...")
         create_mock_payees(conn)
+        print("Generating transactions...")
         create_mock_transactions(conn)
+        print("Generating credit cards...")
         create_mock_credit_cards(conn)
+        print("Generating bills...")
         create_mock_bills(conn)
+        print("Generating customer summaries...")
         create_mock_customer_summaries(conn)
         
         print("Mock data generation completed successfully!")

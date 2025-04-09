@@ -6,7 +6,7 @@ import os
 import time
 from datetime import datetime
 import whisper
-from utils import *
+from utils2 import *
 
 from dotenv import load_dotenv
 load_dotenv()

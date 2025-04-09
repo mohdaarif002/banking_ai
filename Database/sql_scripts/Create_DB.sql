@@ -29,6 +29,7 @@ CREATE TABLE Customers (
     address TEXT NOT NULL,
     credit_score INT,
     customer_since DATE NOT NULL,
+    mpin VARCHAR(6) UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -67,7 +68,7 @@ CREATE TABLE Customers (
 CREATE TABLE Accounts (
     account_id INT AUTO_INCREMENT PRIMARY KEY,
     customer_id INT NOT NULL,
-    account_type ENUM('Savings', 'Checking', 'Loan', 'Credit Card') NOT NULL,
+    account_type ENUM('Savings', 'Current', 'Loan', 'Credit Card') NOT NULL,
     account_number VARCHAR(20) NOT NULL UNIQUE,
     balance DECIMAL(15, 2) DEFAULT 0.00,
     currency VARCHAR(3) NOT NULL,
