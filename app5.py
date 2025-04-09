@@ -3,6 +3,9 @@ import sounddevice as sd
 import numpy as np
 import wave
 import os
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
+
+
 import time
 from datetime import datetime
 import whisper
@@ -49,7 +52,7 @@ def check_mpin(mpin_input):
     conn = mysql.connector.connect(
         host="localhost",
         user="root",
-        password="admin",
+        password="root",
         database="BankDB"
     )
     cursor = conn.cursor()
@@ -95,8 +98,9 @@ if not st.session_state.logged_in:
                 st.session_state.logged_in = True
                 st.session_state.customer_id = user[0]
                 st.session_state.customer_name = user[1]
-                st.experimental_rerun()  # 🔁 Force re-run to clear login form
-                # st.success(f"Welcome, {user[1]}! 🔓")
+                # st.experimental_rerun()  # 🔁 Force re-run to clear login form
+                st.rerun()
+                st.success(f"Welcome, {user[1]}! 🔓")
             else:
                 st.error("Invalid MPIN. Please try again.")
 
@@ -135,6 +139,7 @@ if st.session_state.logged_in:
 
         llm_response = groq_api_call(user_text=user_text, user_mpin="123456", groq_api_key= groq_api_key)
         llm_response = clean_sql_block(llm_response)
+        
         
         st.text_area("LLM Response: ", llm_response)
 

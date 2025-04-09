@@ -16,8 +16,8 @@ def get_db_connection():
         conn = mysql.connector.connect(
             host="localhost",
             user="root", 
-            password="Mazhar321",
-            database="BankDB",
+            password="root",
+            database="BankDB2",
             use_pure=True
         )
         print("Successfully connected to database")
@@ -26,7 +26,7 @@ def get_db_connection():
         print(f"Error connecting to database: {err}")
         print(f"Please check:")
         print("1. MySQL server is running")
-        print("2. Database 'BankDB' exists")
+        print("2. Database 'BankDB2' exists")
         print("3. Username and password are correct") 
         print("4. Host is accessible")
         print(f"Full error: {err}")
