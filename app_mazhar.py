@@ -135,7 +135,7 @@ def show_services():
 
 def show_sql_agent():
     """Display the SQL Query interface"""
-    st.header("DB SQL Query Interface")
+    st.header("AI DB SQL Query Interface")
     st.write("Ask any question about the database and get SQL insights")
     
     # Initialize chat history in session state if it doesn't exist
@@ -185,7 +185,7 @@ Current question: {prompt}"""
                 
                 # Get response from the SQL agent
                 with st.chat_message("assistant"):
-                    with st.spinner("Thinking..."):
+                    with st.spinner("Working on it..."):
                         response = st.session_state.sql_agent.invoke(full_prompt)
                         formatted_response = format_agent_output(response)
                         
@@ -213,6 +213,7 @@ Current question: {prompt}"""
             # Rerun to update the display
             st.rerun()
 
+
 def show_main_interface():
     """Display the main banking interface"""
     # Access user information
@@ -223,27 +224,17 @@ def show_main_interface():
     st.subheader("Welcome to MyBank Dashboard")
     
     # Add tabs for different banking functions
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(["AI-BankBot",
-                                      "Account Summary",
-                                      "Transactions",
-                                      "Services",
-                                      "AI-DB-BankBot"])
+    tab1, tab2= st.tabs(["AI-Customer-BankBot",
+                        "AI-DB-BankBot",])
     
     # Display content for each tab
     with tab1:
         show_ai_bankbot()
-    
+
     with tab2:
-        show_account_summary()
-    
-    with tab3:
-        show_transactions()
-    
-    with tab4:
-        show_services()
-    
-    with tab5:
         show_sql_agent()
+
+
     # Add logout button
     if st.button("Logout"):
         st.session_state.authenticated = False
