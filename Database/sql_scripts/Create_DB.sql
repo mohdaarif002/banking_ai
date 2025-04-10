@@ -72,6 +72,7 @@ CREATE TABLE Accounts (
     account_type ENUM('Savings', 'Current', 'Loan', 'Credit Card') NOT NULL,
     account_number VARCHAR(20) NOT NULL UNIQUE,
     balance DECIMAL(15, 2) DEFAULT 0.00,
+    outstanding_balance DECIMAL(15, 2) DEFAULT 0.00,
     currency VARCHAR(3) NOT NULL,
     status ENUM('Active', 'Inactive', 'Closed', 'Frozen') DEFAULT 'Active',
     interest_rate DECIMAL(5, 2),
@@ -79,11 +80,15 @@ CREATE TABLE Accounts (
     credit_limit DECIMAL(15, 2),
     due_date DATE, -- Payment due date (applicable to Credit Card and Loan accounts)
     opened_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (customer_id) REFERENCES Customers (customer_id) ON DELETE CASCADE
+    FOREIGN KEY (customer_id) REFERENCES Customers (customer_id) ON DELETE CASCADE,
+    CONSTRAINT chk_outstanding_balance CHECK (
+        (account_type IN ('Loan', 'Credit Card') AND outstanding_balance >= 0) OR
+        (account_type IN ('Savings', 'Current') AND outstanding_balance = 0)
+    )
 );
 
 -- -- 7. Account Benefits Table (Many-to-Many Relationship)
--- CREATE TABLE Account_Benefits (
+-- CREATE TABLE Account_Benefits (outsta
 --     account_id INT NOT NULL,
 --     benefit_id INT NOT NULL,
 --     activation_date DATE NOT NULL,
