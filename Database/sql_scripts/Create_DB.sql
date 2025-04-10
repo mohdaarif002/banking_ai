@@ -28,6 +28,7 @@ CREATE TABLE Customers (
     email VARCHAR(100) NOT NULL UNIQUE,
     address TEXT NOT NULL,
     credit_score INT,
+    credit_score_updated_at TIMESTAMP,
     customer_since DATE NOT NULL,
     mpin VARCHAR(6) UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
